@@ -2,21 +2,21 @@
 #include "MPU6050.h"
 #include "controller.hpp"
 
-MPU6050 accelgyro;
-
 namespace balancer
 {
   constexpr int pinMotorA1 = PA0;
   constexpr int pinMotorA2 = PA1;
   constexpr int pinMotorB1 = PA2;
-  constexpr int pinMotorB2 = PA3;  
+  constexpr int pinMotorB2 = PA3;
 
 struct ControlTraits
 {
   static constexpr double p = 9;
   static constexpr double i = 0.001;
-  static constexpr double d = 0.;
+  static constexpr double d = 0;
 };
+
+MPU6050 accelgyro;
 
 class DeviceTraits
 {
@@ -64,23 +64,16 @@ public:
   {
     return micros();
   }
-private:
-
 };
 
 } // namespace balancer
 
 void setup()
 {
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-    Wire.begin();
-  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-    Fastwire::setup(400, true);
-  #endif
+  Wire.begin();
   Serial.begin(38400);
-  accelgyro.initialize();
-  accelgyro.testConnection();
+  balancer::accelgyro.initialize();
+  balancer::accelgyro.testConnection();
 }
 
 class Device

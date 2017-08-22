@@ -42,7 +42,7 @@ private:
     constexpr double shift = 0.003;
     constexpr double k = 0.9;
     gyroAngle_ += gyroRaw * dt - shift;
-    angle_ = k * (angle_ + gyroRaw * dt - shift) + (1 - k) * accAngle;    
+    angle_ = k * (angle_ + gyroRaw * dt - shift) + (1 - k) * accAngle;
   }
 
   double deltaTime()
@@ -61,7 +61,7 @@ private:
   }
 
   int control(double e, double de, double dt)
-  {   
+  {
     if (e > 2.5) return 43;
     if (e < -2.5) return -43;
 
