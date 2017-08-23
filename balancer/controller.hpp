@@ -6,7 +6,7 @@ class Controller
 public:
   Controller() :
     time_(0),
-    angle_(0),
+    filterAngle_(0),
     gyroAngle_(0)
   {
   }
@@ -19,16 +19,15 @@ public:
     int gyroY = 0;
 
     Device::DeviceTraits::read(accX, accZ, gyroY);
-    constexpr double rad2grad = 180.0 / 3.14159;
-    double accAngle = -atan2(accX, accZ) * rad2grad;
-    double gyroRaw = gyroY / 131.0;
+    double gyroRaw = Device::DeviceTraits::gyro(gyroY);
+    double accAngle = Device::DeviceTraits::angle(accX, accZ);
     filter(accAngle, gyroRaw, dt);
-    int power = control(angle_, gyroRaw, dt);
+    int power = control(gyroRaw, dt);
     apply(power);
 
     Device::DeviceTraits::write(currentTime(), 3);
     Device::DeviceTraits::write(accAngle, 3);
-    Device::DeviceTraits::write(angle_, 3);
+    Device::DeviceTraits::write(filterAngle_, 3);
     Device::DeviceTraits::write(gyroRaw, 3);
     Device::DeviceTraits::write(dt, 4);
     Device::DeviceTraits::write(gyroAngle_, 3);
@@ -39,10 +38,11 @@ public:
 private:
   void filter(double accAngle, double gyroRaw, double dt)
   {
+    constexpr double k1 = Device::ControlTraits::filter_gain;
+    constexpr double k2 = 1 - k1;
     constexpr double shift = 0.003;
-    constexpr double k = 0.9;
     gyroAngle_ += gyroRaw * dt - shift;
-    angle_ = k * (angle_ + gyroRaw * dt - shift) + (1 - k) * accAngle;
+    filterAngle_ = k1 * (filterAngle_ + gyroRaw * dt - shift) + k2 * accAngle;
   }
 
   double deltaTime()
@@ -60,22 +60,27 @@ private:
     return time_ / 1e6;
   }
 
-  int control(double e, double de, double dt)
+  int control(double de, double dt)
   {
-    if (e > 2.5) return 43;
-    if (e < -2.5) return -43;
+    constexpr int limit = Device::ControlTraits::limit;
+    constexpr double threshold = Device::ControlTraits::threshold;
+    constexpr int threshold_control = Device::ControlTraits::threshold_control;
+
+    double e = filterAngle_;
+    if (e > threshold) return threshold_control;
+    if (e < -threshold) return -threshold_control;
 
     static double i = 0;
     double p = Device::ControlTraits::p * e;
     i += Device::ControlTraits::i * e * dt;
     double d = Device::ControlTraits::d * de;
 
-    if (i > 255) i = 255;
-    if (i < -255) i = -255;
+    if (i > limit) i = limit;
+    if (i < -limit) i = -limit;
 
     int power = round(p + i + d);
-    if (power > 255) power = 255;
-    if (power < -255) power = -255;
+    if (power > limit) power = limit;
+    if (power < -limit) power = -limit;
     return power;
   }
 
@@ -85,7 +90,7 @@ private:
   }
 
   unsigned long time_;
-  double angle_;
+  double filterAngle_;
   double gyroAngle_;
 };
 
