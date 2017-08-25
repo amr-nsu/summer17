@@ -38,9 +38,9 @@ public:
 private:
   void filter(double accAngle, double gyroRaw, double dt)
   {
+    constexpr double shift = Device::ControlTraits::shift;
     constexpr double k1 = Device::ControlTraits::filter_gain;
     constexpr double k2 = 1 - k1;
-    constexpr double shift = 0.003;
     gyroAngle_ += gyroRaw * dt - shift;
     filterAngle_ = k1 * (filterAngle_ + gyroRaw * dt - shift) + k2 * accAngle;
   }

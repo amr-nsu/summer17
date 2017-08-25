@@ -12,6 +12,7 @@ struct ControlTraits
   static constexpr double d = 0;
 
   static constexpr int    limit = 255;
+  static constexpr double shift = 0.003;
   static constexpr double filter_gain = 0.9;
   static constexpr double threshold = 2.5;
   static constexpr int    threshold_control = 43;
